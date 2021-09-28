@@ -1,0 +1,11 @@
+server:
+  port:
+
+spring:
+  servlet:
+    multipart:
+      max-file-size:
+
+access:
+  key: xxxxxxxxxx
+  secret: xxxxxxxxxx
