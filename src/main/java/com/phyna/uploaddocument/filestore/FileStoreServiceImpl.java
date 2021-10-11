@@ -79,7 +79,7 @@ public class FileStoreServiceImpl implements FileStoreService{
             S3ObjectInputStream inputStream = object.getObjectContent();
             return IOUtils.toByteArray(inputStream);
         }catch (AmazonServiceException| IOException e){
-            throw new ProcessException("Failed to download file to s3: " +  e.getLocalizedMessage());
+            throw new ProcessException("Failed to download from s3: " +  e.getLocalizedMessage());
         }
     }
 }
