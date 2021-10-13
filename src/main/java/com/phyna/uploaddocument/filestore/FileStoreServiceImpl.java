@@ -18,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
@@ -49,6 +50,41 @@ public class FileStoreServiceImpl implements FileStoreService{
         try{
             TransferManager tm = new TransferManager(s3);
             PutObjectRequest request = new PutObjectRequest(path, fileName, inputStream, metadata);
+
+            request.setGeneralProgressListener(new ProgressListener() {
+                @Override
+                public void progressChanged(ProgressEvent progressEvent) {
+                    final ProgressEventType progressEventType = progressEvent.getEventType();
+                    //log.info("Transferred bytes: " + progressEvent.getBytesTransferred());
+
+                    if(progressEventType == ProgressEventType.TRANSFER_COMPLETED_EVENT){
+                        log.info("document transfer completed successfully");
+                        UploadResponse uploadResponse = UploadResponse.builder()
+                                .message("success").filename(fileName).uniqueId(uniqueId).build();
+                        exchangeService.fanoutSendMessage(uploadResponse);
+                    }
+                }
+            });
+
+
+            tm.upload(request);
+        } catch (AmazonServiceException e){
+            throw new IllegalStateException("Failed to store file to s3", e);
+        }
+    }
+
+    @Override
+    public void save(String uniqueId, String path, String fileName, Optional<Map<String, String>> optionalMetadata, File file) {
+        ObjectMetadata metadata = new ObjectMetadata();
+        optionalMetadata.ifPresent(map -> {
+            if(!map.isEmpty()){
+                map.forEach(metadata::addUserMetadata);
+            }
+        });
+
+        try{
+            TransferManager tm = new TransferManager(s3);
+            PutObjectRequest request = new PutObjectRequest(path, fileName, file);
 
             request.setGeneralProgressListener(new ProgressListener() {
                 @Override

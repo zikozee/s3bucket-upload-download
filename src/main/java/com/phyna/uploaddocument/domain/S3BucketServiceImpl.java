@@ -3,11 +3,16 @@ package com.phyna.uploaddocument.domain;
 import com.phyna.uploaddocument.bucket.BucketName;
 import com.phyna.uploaddocument.exceptions.ProcessException;
 import com.phyna.uploaddocument.filestore.FileStoreService;
+import com.phyna.uploaddocument.util.Utility;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URLConnection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -44,6 +49,18 @@ public class S3BucketServiceImpl implements S3BucketService{
     }
 
     @Override
+    public void uploadBase64File(UploadBean uploadBean) throws ProcessException {
+
+        File file = Utility.getImageFromBase64(uploadBean.getImage(), uploadBean.getName());
+
+        Map<String, String> metadata = extractMetadata(file);
+        String path = BucketName.PROFILE_IMAGE.getBucketName() + SEPARATOR + uploadBean.getUniqueId();
+        String fileName = uploadBean.getUniqueId() + "-" + uploadBean.getName();
+        fileStoreService.save(uploadBean.getUniqueId(), path, fileName, Optional.of(metadata), file);
+    }
+
+
+    @Override
     public byte[] downloadFile(String uniqueId, String filename) throws ProcessException {
         String path = BucketName.PROFILE_IMAGE.getBucketName() + SEPARATOR + uniqueId;
 
@@ -54,10 +71,26 @@ public class S3BucketServiceImpl implements S3BucketService{
         }
     }
 
+
+
     private Map<String, String> extractMetadata(MultipartFile file) {
         Map<String, String> metadata = new HashMap<>();
         metadata.put("Content-Type", file.getContentType());
         metadata.put("Content-Length", String.valueOf(file.getSize()));
+        return metadata;
+    }
+
+    private Map<String, String> extractMetadata(File file) throws  ProcessException {
+        Map<String, String> metadata = new HashMap<>();
+        URLConnection connection;
+        try {
+            connection = file.toURI().toURL().openConnection();
+        }catch (IOException ex){
+            throw new ProcessException(ex.getLocalizedMessage());
+        }
+
+        metadata.put("Content-Type", connection.getContentType());
+        metadata.put("Content-Length", String.valueOf(file.length()));
         return metadata;
     }
 
