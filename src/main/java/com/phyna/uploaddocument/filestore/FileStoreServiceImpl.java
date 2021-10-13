@@ -5,10 +5,7 @@ import com.amazonaws.event.ProgressEvent;
 import com.amazonaws.event.ProgressEventType;
 import com.amazonaws.event.ProgressListener;
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.model.PutObjectRequest;
-import com.amazonaws.services.s3.model.S3Object;
-import com.amazonaws.services.s3.model.S3ObjectInputStream;
+import com.amazonaws.services.s3.model.*;
 import com.amazonaws.services.s3.transfer.TransferManager;
 import com.amazonaws.util.IOUtils;
 import com.phyna.uploaddocument.exceptions.ProcessException;
@@ -60,7 +57,8 @@ public class FileStoreServiceImpl implements FileStoreService{
                     if(progressEventType == ProgressEventType.TRANSFER_COMPLETED_EVENT){
                         log.info("document transfer completed successfully");
                         UploadResponse uploadResponse = UploadResponse.builder()
-                                .message("success").filename(fileName).uniqueId(uniqueId).build();
+                                .message("success").filename(fileName).uniqueId(uniqueId)
+                                .downloadUrl("https://phyna-upload.s3.amazonaws.com/" + uniqueId +  "/" + fileName).build();
                         exchangeService.fanoutSendMessage(uploadResponse);
                     }
                 }
@@ -84,7 +82,7 @@ public class FileStoreServiceImpl implements FileStoreService{
 
         try{
             TransferManager tm = new TransferManager(s3);
-            PutObjectRequest request = new PutObjectRequest(path, fileName, file);
+            PutObjectRequest request = new PutObjectRequest(path, fileName, file).withCannedAcl(CannedAccessControlList.PublicRead);
 
             request.setGeneralProgressListener(new ProgressListener() {
                 @Override
@@ -95,7 +93,10 @@ public class FileStoreServiceImpl implements FileStoreService{
                     if(progressEventType == ProgressEventType.TRANSFER_COMPLETED_EVENT){
                         log.info("document transfer completed successfully");
                         UploadResponse uploadResponse = UploadResponse.builder()
-                                .message("success").filename(fileName).uniqueId(uniqueId).build();
+                                .message("success").filename(fileName).uniqueId(uniqueId)
+                                .downloadUrl("https://phyna-upload.s3.amazonaws.com/" + uniqueId +  "/" + fileName).build();
+//                        https://phyna-upload.s3.amazonaws.com/tolu2345678910/tolu2345678910-err.JPG?
+                        https://phyna-upload.s3.amazonaws.com/tolu4455678910tolu4455678910-tolu4455678910-err.JPG"
                         exchangeService.fanoutSendMessage(uploadResponse);
                     }
                 }

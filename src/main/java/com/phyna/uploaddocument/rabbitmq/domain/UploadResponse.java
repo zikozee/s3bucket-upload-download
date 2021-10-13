@@ -17,4 +17,5 @@ public class UploadResponse {
     private String message;
     private String uniqueId;
     private String filename;
+    private String downloadUrl;
 }
